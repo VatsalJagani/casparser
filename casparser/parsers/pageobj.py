@@ -96,6 +96,9 @@ def _read_text_obj(obj, tp_handle, buf, fname_buf) -> Tuple[str, str]:
     cc = pdfium_raw.FPDFTextObj_GetText(obj, tp_handle, buf, _TEXT_BUF_SIZE)
     # `cc` is byte length INCLUDING null terminator. Strip the null.
     text = bytes(buf)[: max(0, cc - 2)].decode("utf-16-le", errors="replace")
+    # PDFium returns U+0002 (not U+00AD) for the soft hyphen in some CDSL
+    # CAS fonts; normalise so wrapped ISINs are rejoined downstream.
+    text = text.replace("\x02", SOFT_HYPHEN)
     if not text.strip():
         return "", ""
     font = pdfium_raw.FPDFTextObj_GetFont(obj)
@@ -400,7 +403,7 @@ def _join_column_atoms(atoms_top_down: List[Atom]) -> str:
     pieces: List[str] = []
     continuation = False
     for atom in atoms_top_down:
-        part = atom.text.strip()
+        part = atom.text.replace("\x02", SOFT_HYPHEN).strip()  # see _read_text_obj
         if not part:
             continue
         if continuation:
