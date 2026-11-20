@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **CDSL: wrapped ISINs lost when PDFium reports the soft hyphen as U+0002.**
+  Some CDSL CAS fonts make `FPDFTextObj_GetText` return `\x02` instead of
+  U+00AD at a wrapped ISIN's line break, so the ISIN was never rebuilt and the
+  folio row was silently dropped. U+0002 is now treated as a soft hyphen.
+
 ## 1.4.1
 
 ### Hotfix
